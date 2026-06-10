@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+// import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card' // Reservado para filtros
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select' // Reservado para filtros
 import { MatchCard } from './MatchCard'
 import { useMatches } from '@/hooks/useMatches'
 import { usePredictions } from '@/hooks/usePredictions'
@@ -13,11 +13,11 @@ import { es } from 'date-fns/locale'
 
 export function MatchList() {
   const { user } = useAuth()
-  const { matches, teams, isLoading, error, getMatchesByPhase } = useMatches()
+  const { matches, teams: _teams, isLoading, error, getMatchesByPhase } = useMatches()
   const { predictions, savePrediction, isSaving } = usePredictions(user?.id)
   
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'live' | 'finished'>('all')
-  const [groupFilter, setGroupFilter] = useState<string>('all')
+  const [filter, _setFilter] = useState<'all' | 'upcoming' | 'live' | 'finished'>('all')
+  const [groupFilter, _setGroupFilter] = useState<string>('all')
   const [currentDateIndex, setCurrentDateIndex] = useState(0)
 
   // Reset to first date when filters change
@@ -25,11 +25,13 @@ export function MatchList() {
     setCurrentDateIndex(0)
   }, [filter, groupFilter])
 
-  // Get unique groups
-  const groups = useMemo(() => {
+  /*
+  // Get unique groups (reservado para filtros futuros)
+  const _groups = useMemo(() => {
     const groupSet = new Set(teams?.map(t => t.group_name) || [])
     return Array.from(groupSet).sort()
   }, [teams])
+  */
 
   // Filter matches
   const filteredMatches = useMemo(() => {
@@ -92,7 +94,7 @@ export function MatchList() {
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
+      {/* Filters - DESACTIVADOS TEMPORALMENTE
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Filtros</CardTitle>
@@ -135,6 +137,7 @@ export function MatchList() {
           </div>
         </CardContent>
       </Card>
+      */}
 
       {/* Matches by Phase */}
       <Tabs defaultValue="group">
