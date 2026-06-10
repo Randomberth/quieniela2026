@@ -663,6 +663,38 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- ============================================================
+-- SECCION 8: FUNCION MANUAL PARA ACTUALIZAR LEADERBOARD
+-- ============================================================
+-- NOTA: Esta funcion reemplaza el trigger deshabilitado.
+-- Ejecutar manualmente o desde el boton "Actualizar Ranking" en UI.
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION refresh_leaderboard_manual()
+RETURNS TEXT AS $$
+BEGIN
+    DELETE FROM leaderboard_cache;
+
+    INSERT INTO leaderboard_cache (user_id, username, total_points, exact_predictions, correct_tendencies, total_predictions, rank, last_updated)
+    SELECT
+        p.user_id,
+        COALESCE(pr.username, 'Usuario'),
+        SUM(p.points_earned) AS total_points,
+        COUNT(*) FILTER (WHERE p.points_earned = 3) AS exact_predictions,
+        COUNT(*) FILTER (WHERE p.points_earned = 1) AS correct_tendencies,
+        COUNT(*) AS total_predictions,
+        ROW_NUMBER() OVER (ORDER BY SUM(p.points_earned) DESC) AS rank,
+        NOW() AS last_updated
+    FROM predictions p
+    LEFT JOIN profiles pr ON pr.id = p.user_id
+    GROUP BY p.user_id, pr.username
+    ORDER BY total_points DESC;
+
+    RETURN 'Leaderboard actualizado: ' || (SELECT COUNT(*) FROM leaderboard_cache) || ' participantes';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- ============================================================
 -- NOTAS FINALES
 -- ============================================================
 -- 1. Ejecutar SECCION 1 primero (crear tablas)

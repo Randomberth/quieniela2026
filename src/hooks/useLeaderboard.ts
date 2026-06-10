@@ -1,9 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { errorLogger } from '@/lib/logger'
 import type { LeaderboardEntry } from '@/types'
 
 export function useLeaderboard() {
+  const queryClient = useQueryClient()
   const { data: leaderboard, isLoading, error } = useQuery({
     queryKey: ['leaderboard'],
     queryFn: async () => {
@@ -52,6 +53,31 @@ export function useLeaderboard() {
     return leaderboard?.length ?? 0
   }
 
+  const refreshLeaderboard = async () => {
+    try {
+      const { data, error } = await supabase.rpc('refresh_leaderboard_manual')
+      if (error) throw error
+
+      await queryClient.invalidateQueries({ queryKey: ['leaderboard'] })
+
+      errorLogger.info({
+        operation: 'UPDATE',
+        entity: 'leaderboard',
+        message: data || 'Leaderboard actualizado',
+      })
+
+      return { success: true, message: data }
+    } catch (err: any) {
+      errorLogger.error({
+        operation: 'UPDATE',
+        entity: 'leaderboard',
+        message: err.message || 'Error al actualizar leaderboard',
+        statusCode: err.status || err.code,
+      })
+      throw err
+    }
+  }
+
   return {
     leaderboard,
     isLoading,
@@ -59,6 +85,7 @@ export function useLeaderboard() {
     getTopUsers,
     getUserRank,
     getUserPosition,
-    getTotalParticipants
+    getTotalParticipants,
+    refreshLeaderboard
   }
 }

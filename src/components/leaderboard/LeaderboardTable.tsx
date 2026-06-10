@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Trophy, Medal, Award, TrendingUp, User } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Trophy, Medal, Award, TrendingUp, User, RefreshCw } from 'lucide-react'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
@@ -9,8 +10,10 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export function LeaderboardTable() {
-  const { leaderboard, isLoading, error } = useLeaderboard()
+  const { leaderboard, isLoading, error, refreshLeaderboard } = useLeaderboard()
   const { user } = useAuth()
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
   const userPosition = useMemo(() => {
     if (!user || !leaderboard) return null
@@ -20,6 +23,18 @@ export function LeaderboardTable() {
   const topThree = useMemo(() => {
     return leaderboard?.slice(0, 3) || []
   }, [leaderboard])
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await refreshLeaderboard()
+      setLastUpdate(new Date())
+    } catch {
+      // Error ya logueado en el hook
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -104,6 +119,24 @@ export function LeaderboardTable() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-sm text-gray-500">
+              {lastUpdate ? (
+                <>Última actualización: {format(lastUpdate, 'dd/MM HH:mm:ss')}</>
+              ) : (
+                <>Haz clic en "Actualizar Ranking" para cargar datos</>
+              )}
+            </div>
+            <Button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              variant="outline"
+              size="sm"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Actualizando...' : 'Actualizar Ranking'}
+            </Button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
