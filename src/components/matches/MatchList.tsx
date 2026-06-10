@@ -14,7 +14,7 @@ import { es } from 'date-fns/locale'
 export function MatchList() {
   const { user } = useAuth()
   const { matches, teams: _teams, isLoading, error, getMatchesByPhase } = useMatches()
-  const { predictions, savePrediction, isSaving } = usePredictions(user?.id)
+  const { predictions, savePrediction } = usePredictions(user?.id)
   
   const [filter, _setFilter] = useState<'all' | 'upcoming' | 'live' | 'finished'>('all')
   const [groupFilter, _setGroupFilter] = useState<string>('all')
@@ -195,7 +195,6 @@ export function MatchList() {
                     match={match}
                     prediction={predictions?.find(p => p.match_id === match.id)}
                     onSavePrediction={user ? handleSavePrediction : undefined}
-                    isSaving={isSaving}
                     userId={user?.id}
                   />
                 ))}
@@ -212,7 +211,7 @@ export function MatchList() {
                 match={match}
                 prediction={predictions?.find(p => p.match_id === match.id)}
                 onSavePrediction={user ? handleSavePrediction : undefined}
-                isSaving={isSaving}
+
                 userId={user?.id}
               />
             ))}
@@ -227,7 +226,7 @@ export function MatchList() {
                 match={match}
                 prediction={predictions?.find(p => p.match_id === match.id)}
                 onSavePrediction={user ? handleSavePrediction : undefined}
-                isSaving={isSaving}
+
                 userId={user?.id}
               />
             ))}
@@ -242,7 +241,7 @@ export function MatchList() {
                 match={match}
                 prediction={predictions?.find(p => p.match_id === match.id)}
                 onSavePrediction={user ? handleSavePrediction : undefined}
-                isSaving={isSaving}
+
                 userId={user?.id}
               />
             ))}
@@ -252,7 +251,7 @@ export function MatchList() {
                 match={match}
                 prediction={predictions?.find(p => p.match_id === match.id)}
                 onSavePrediction={user ? handleSavePrediction : undefined}
-                isSaving={isSaving}
+
                 userId={user?.id}
               />
             ))}
@@ -262,7 +261,7 @@ export function MatchList() {
                 match={match}
                 prediction={predictions?.find(p => p.match_id === match.id)}
                 onSavePrediction={user ? handleSavePrediction : undefined}
-                isSaving={isSaving}
+
                 userId={user?.id}
               />
             ))}

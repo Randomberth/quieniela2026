@@ -14,7 +14,6 @@ interface MatchCardProps {
   match: Match
   prediction?: Prediction
   onSavePrediction?: (matchId: string, homeScore: number, awayScore: number) => void
-  isSaving?: boolean
   userId?: string
   compact?: boolean
 }
@@ -23,13 +22,13 @@ export function MatchCard({
   match, 
   prediction, 
   onSavePrediction, 
-  isSaving = false,
   userId,
   compact = false 
 }: MatchCardProps) {
   const [homeScore, setHomeScore] = useState<string>(prediction?.home_score?.toString() || '')
   const [awayScore, setAwayScore] = useState<string>(prediction?.away_score?.toString() || '')
   const [hasChanges, setHasChanges] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Check if match is locked
   const isLocked = useMemo(() => {
@@ -61,7 +60,7 @@ export function MatchCard({
   }, [])
 
   // Handle save
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!onSavePrediction || !userId || isLocked) return
     
     const home = parseInt(homeScore, 10)
@@ -71,8 +70,13 @@ export function MatchCard({
       return
     }
 
-    onSavePrediction(match.id, home, away)
-    setHasChanges(false)
+    setIsSubmitting(true)
+    try {
+      await onSavePrediction(match.id, home, away)
+      setHasChanges(false)
+    } finally {
+      setIsSubmitting(false)
+    }
   }, [onSavePrediction, match.id, homeScore, awayScore, userId, isLocked])
 
   // Get status badge
@@ -211,7 +215,7 @@ export function MatchCard({
                   onChange={(e) => handleHomeScoreChange(e.target.value)}
                   className="w-14 h-12 text-center text-lg font-bold"
                   placeholder="-"
-                  disabled={isLocked || isSaving}
+                  disabled={isLocked || isSubmitting}
                 />
                 <span className="text-gray-400 font-bold text-lg">-</span>
                 <Input
@@ -222,7 +226,7 @@ export function MatchCard({
                   onChange={(e) => handleAwayScoreChange(e.target.value)}
                   className="w-14 h-12 text-center text-lg font-bold"
                   placeholder="-"
-                  disabled={isLocked || isSaving}
+                  disabled={isLocked || isSubmitting}
                 />
               </div>
             )}
@@ -246,13 +250,13 @@ export function MatchCard({
           <div className="flex justify-center">
             <Button
               onClick={handleSave}
-              disabled={!hasChanges || isSaving || !homeScore || !awayScore}
+              disabled={!hasChanges || isSubmitting || !homeScore || !awayScore}
               size="sm"
               className={cn(
                 hasPrediction && hasChanges && "bg-blue-600 hover:bg-blue-700"
               )}
             >
-              {isSaving ? 'Guardando...' : hasPrediction ? 'Actualizar' : 'Guardar Predicción'}
+              {isSubmitting ? 'Guardando...' : hasPrediction ? 'Actualizar' : 'Guardar Predicción'}
             </Button>
           </div>
         )}
