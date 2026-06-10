@@ -672,7 +672,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION refresh_leaderboard_manual()
 RETURNS TEXT AS $$
 BEGIN
-    DELETE FROM leaderboard_cache;
+    DELETE FROM leaderboard_cache WHERE true;
 
     INSERT INTO leaderboard_cache (user_id, username, total_points, exact_predictions, correct_tendencies, total_predictions, rank, last_updated)
     SELECT
