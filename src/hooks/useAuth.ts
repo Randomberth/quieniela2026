@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { errorLogger } from '@/lib/logger'
 import type { User } from '@supabase/supabase-js'
 
 export function useAuth() {
@@ -42,6 +43,12 @@ export function useAuth() {
       if (error) throw error
       setProfile(data)
     } catch (err) {
+      errorLogger.error({
+        operation: 'READ',
+        entity: 'profile',
+        message: (err as Error).message || 'Error fetching profile',
+        userId,
+      })
       console.error('Error fetching profile:', err)
     }
   }
@@ -67,9 +74,22 @@ export function useAuth() {
           preferred_language: 'es'
         })
       }
+
+      errorLogger.info({
+        operation: 'AUTH',
+        entity: 'auth',
+        message: 'Usuario registrado exitosamente',
+        userId: data.user?.id,
+      })
       
       return { success: true, user: data.user }
     } catch (err: any) {
+      errorLogger.error({
+        operation: 'AUTH',
+        entity: 'auth',
+        message: err.message || 'Error al registrar',
+        metadata: { email },
+      })
       setError(err.message)
       return { success: false, error: err.message }
     }
@@ -84,8 +104,22 @@ export function useAuth() {
       })
 
       if (error) throw error
+      
+      errorLogger.info({
+        operation: 'AUTH',
+        entity: 'auth',
+        message: 'Inicio de sesión exitoso',
+        userId: data.user?.id,
+      })
+      
       return { success: true, user: data.user }
     } catch (err: any) {
+      errorLogger.error({
+        operation: 'AUTH',
+        entity: 'auth',
+        message: err.message || 'Error al iniciar sesión',
+        metadata: { email },
+      })
       setError(err.message)
       return { success: false, error: err.message }
     }
@@ -96,8 +130,18 @@ export function useAuth() {
       setError(null)
       const { error } = await supabase.auth.signOut()
       if (error) throw error
+      errorLogger.info({
+        operation: 'AUTH',
+        entity: 'auth',
+        message: 'Sesión cerrada',
+      })
       return { success: true }
     } catch (err: any) {
+      errorLogger.error({
+        operation: 'AUTH',
+        entity: 'auth',
+        message: err.message || 'Error al cerrar sesión',
+      })
       setError(err.message)
       return { success: false, error: err.message }
     }

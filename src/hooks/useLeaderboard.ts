@@ -1,18 +1,36 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { errorLogger } from '@/lib/logger'
 import type { LeaderboardEntry } from '@/types'
 
 export function useLeaderboard() {
   const { data: leaderboard, isLoading, error } = useQuery({
     queryKey: ['leaderboard'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('leaderboard_cache')
-        .select('*')
-        .order('rank', { ascending: true })
+      try {
+        const { data, error } = await supabase
+          .from('leaderboard_cache')
+          .select('*')
+          .order('rank', { ascending: true })
 
-      if (error) throw error
-      return data as LeaderboardEntry[]
+        if (error) throw error
+
+        errorLogger.info({
+          operation: 'READ',
+          entity: 'leaderboard',
+          message: `${data.length} participantes en el ranking`,
+        })
+
+        return data as LeaderboardEntry[]
+      } catch (err: any) {
+        errorLogger.error({
+          operation: 'READ',
+          entity: 'leaderboard',
+          message: err.message || 'Error al cargar leaderboard',
+          statusCode: err.status || err.code,
+        })
+        throw err
+      }
     },
     staleTime: 60 * 1000 // 1 minute
   })

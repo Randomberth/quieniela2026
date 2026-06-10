@@ -294,10 +294,19 @@ CREATE POLICY "predictions_delete_own"
     ON predictions FOR DELETE
     USING (auth.uid() = user_id);
 
--- LEADERBOARD: Todos pueden leer
+-- LEADERBOARD: Todos pueden leer (necesario para mostrar el ranking)
 CREATE POLICY "leaderboard_select_all"
     ON leaderboard_cache FOR SELECT
     USING (true);
+
+-- LEADERBOARD: Permite DELETE/INSERT para el trigger update_leaderboard_cache
+CREATE POLICY "leaderboard_cache_delete_all"
+    ON leaderboard_cache FOR DELETE
+    USING (true);
+
+CREATE POLICY "leaderboard_cache_insert_all"
+    ON leaderboard_cache FOR INSERT
+    WITH CHECK (true);
 
 
 -- ============================================================

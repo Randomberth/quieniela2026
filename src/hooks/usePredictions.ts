@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { errorLogger } from '@/lib/logger'
 import type { Prediction } from '@/types'
 
 export function usePredictions(userId?: string) {
@@ -10,14 +11,33 @@ export function usePredictions(userId?: string) {
     queryFn: async () => {
       if (!userId) return []
       
-      const { data, error } = await supabase
-        .from('predictions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+      try {
+        const { data, error } = await supabase
+          .from('predictions')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
 
-      if (error) throw error
-      return data as Prediction[]
+        if (error) throw error
+
+        errorLogger.info({
+          operation: 'READ',
+          entity: 'predictions',
+          message: `${data.length} predicciones cargadas`,
+          userId,
+        })
+
+        return data as Prediction[]
+      } catch (err: any) {
+        errorLogger.error({
+          operation: 'READ',
+          entity: 'predictions',
+          message: err.message || 'Error al cargar predicciones',
+          statusCode: err.status || err.code,
+          userId,
+        })
+        throw err
+      }
     },
     enabled: !!userId,
     staleTime: 2 * 60 * 1000 // 2 minutes
@@ -55,35 +75,56 @@ export function usePredictions(userId?: string) {
       // Check if prediction already exists
       const existingPrediction = getPredictionForMatch(matchId)
 
-      let result
-      if (existingPrediction) {
-        // Update
-        result = await supabase
-          .from('predictions')
-          .update({
-            home_score: homeScore,
-            away_score: awayScore,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingPrediction.id)
-          .select()
-          .single()
-      } else {
-        // Insert
-        result = await supabase
-          .from('predictions')
-          .insert({
-            user_id: userId,
-            match_id: matchId,
-            home_score: homeScore,
-            away_score: awayScore
-          })
-          .select()
-          .single()
-      }
+      try {
+        let result
+        if (existingPrediction) {
+          // Update
+          result = await supabase
+            .from('predictions')
+            .update({
+              home_score: homeScore,
+              away_score: awayScore,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingPrediction.id)
+            .select()
+            .single()
+        } else {
+          // Insert
+          result = await supabase
+            .from('predictions')
+            .insert({
+              user_id: userId,
+              match_id: matchId,
+              home_score: homeScore,
+              away_score: awayScore
+            })
+            .select()
+            .single()
+        }
 
-      if (result.error) throw result.error
-      return result.data as Prediction
+        if (result.error) throw result.error
+
+        errorLogger.info({
+          operation: existingPrediction ? 'UPDATE' : 'CREATE',
+          entity: 'predictions',
+          message: existingPrediction ? 'Predicción actualizada' : 'Predicción guardada',
+          userId,
+          metadata: { matchId, homeScore, awayScore },
+        })
+
+        return result.data as Prediction
+      } catch (err: any) {
+        errorLogger.error({
+          operation: existingPrediction ? 'UPDATE' : 'CREATE',
+          entity: 'predictions',
+          message: err.message || 'Error al guardar predicción',
+          statusCode: err.status || err.code,
+          userId,
+          metadata: { matchId, homeScore, awayScore },
+        })
+        throw err
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['predictions', userId] })
@@ -94,12 +135,32 @@ export function usePredictions(userId?: string) {
     mutationFn: async (predictionId: string) => {
       if (!userId) throw new Error('Usuario no autenticado')
 
-      const { error } = await supabase
-        .from('predictions')
-        .delete()
-        .eq('id', predictionId)
+      try {
+        const { error } = await supabase
+          .from('predictions')
+          .delete()
+          .eq('id', predictionId)
 
-      if (error) throw error
+        if (error) throw error
+
+        errorLogger.info({
+          operation: 'DELETE',
+          entity: 'predictions',
+          message: 'Predicción eliminada',
+          userId,
+          metadata: { predictionId },
+        })
+      } catch (err: any) {
+        errorLogger.error({
+          operation: 'DELETE',
+          entity: 'predictions',
+          message: err.message || 'Error al eliminar predicción',
+          statusCode: err.status || err.code,
+          userId,
+          metadata: { predictionId },
+        })
+        throw err
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['predictions', userId] })
