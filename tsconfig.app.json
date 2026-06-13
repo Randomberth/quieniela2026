@@ -7,6 +7,10 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
 
+    /* Strict Mode */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+
     /* Paths */
     "paths": {
       "@/*": ["./src/*"]

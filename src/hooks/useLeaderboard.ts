@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { errorLogger } from '@/lib/logger'
-import type { LeaderboardEntry } from '@/types'
+import { safeCastLeaderboard } from '@/types/utils'
+import { getSupabaseErrorMessage, getSupabaseStatusCode } from '@/types/supabase-augmented'
 
 export function useLeaderboard() {
   const queryClient = useQueryClient()
@@ -16,19 +17,22 @@ export function useLeaderboard() {
 
         if (error) throw error
 
+        const validData = safeCastLeaderboard(data)
+
         errorLogger.info({
           operation: 'READ',
           entity: 'leaderboard',
-          message: `${data.length} participantes en el ranking`,
+          message: `${validData.length} participantes en el ranking`,
         })
 
-        return data as LeaderboardEntry[]
-      } catch (err: any) {
+        return validData
+      } catch (err: unknown) {
+        const message = getSupabaseErrorMessage(err)
         errorLogger.error({
           operation: 'READ',
           entity: 'leaderboard',
-          message: err.message || 'Error al cargar leaderboard',
-          statusCode: err.status || err.code,
+          message,
+          statusCode: getSupabaseStatusCode(err),
         })
         throw err
       }
@@ -63,16 +67,17 @@ export function useLeaderboard() {
       errorLogger.info({
         operation: 'UPDATE',
         entity: 'leaderboard',
-        message: data || 'Leaderboard actualizado',
+        message: typeof data === 'string' ? data : 'Leaderboard actualizado',
       })
 
-      return { success: true, message: data }
-    } catch (err: any) {
+      return { success: true as const, message: typeof data === 'string' ? data : 'Leaderboard actualizado' }
+    } catch (err: unknown) {
+      const message = getSupabaseErrorMessage(err)
       errorLogger.error({
         operation: 'UPDATE',
         entity: 'leaderboard',
-        message: err.message || 'Error al actualizar leaderboard',
-        statusCode: err.status || err.code,
+        message,
+        statusCode: getSupabaseStatusCode(err),
       })
       throw err
     }

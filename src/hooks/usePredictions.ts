@@ -1,10 +1,17 @@
+import { useActionState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { errorLogger } from '@/lib/logger'
+import { safeCastPredictions } from '@/types/utils'
+import { getSupabaseErrorMessage, getSupabaseStatusCode } from '@/types/supabase-augmented'
+import { isMatchLockedForPrediction } from '@/utils/matchValidation'
+import { isFeatureEnabled } from '@/config/feature-flags'
+import { submitPredictionAction, type PredictionFormState } from '@/actions/predictions'
 import type { Prediction } from '@/types'
 
 export function usePredictions(userId?: string) {
   const queryClient = useQueryClient()
+  const isFormActionsEnabled = isFeatureEnabled('react-19-form-actions')
 
   const { data: predictions, isLoading, error } = useQuery({
     queryKey: ['predictions', userId],
@@ -20,20 +27,23 @@ export function usePredictions(userId?: string) {
 
         if (error) throw error
 
+        const validPredictions = safeCastPredictions(data)
+
         errorLogger.info({
           operation: 'READ',
           entity: 'predictions',
-          message: `${data.length} predicciones cargadas`,
+          message: `${validPredictions.length} predicciones cargadas`,
           userId,
         })
 
-        return data as Prediction[]
-      } catch (err: any) {
+        return validPredictions
+      } catch (err: unknown) {
+        const message = getSupabaseErrorMessage(err)
         errorLogger.error({
           operation: 'READ',
           entity: 'predictions',
-          message: err.message || 'Error al cargar predicciones',
-          statusCode: err.status || err.code,
+          message,
+          statusCode: getSupabaseStatusCode(err),
           userId,
         })
         throw err
@@ -47,6 +57,12 @@ export function usePredictions(userId?: string) {
     return predictions?.find(p => p.match_id === matchId)
   }
 
+  // React 19 Form Action state
+  const [formActionState, formAction, isFormActionPending] = useActionState(
+    submitPredictionAction,
+    { success: false, message: '' } as PredictionFormState
+  );
+
   const savePrediction = useMutation({
     mutationFn: async ({
       matchId,
@@ -59,7 +75,21 @@ export function usePredictions(userId?: string) {
     }) => {
       if (!userId) throw new Error('Usuario no autenticado')
 
-      // Check if match is locked (trigger will block, but we check here for UX)
+      // If Form Actions are enabled, use the new approach
+      if (isFormActionsEnabled) {
+        const formData = new FormData()
+        formData.append('matchId', matchId)
+        formData.append('userId', userId)
+        formData.append('homeScore', homeScore.toString())
+        formData.append('awayScore', awayScore.toString())
+
+        // This will trigger the form action
+        await formAction(formData)
+        return null // Form action handles state separately
+      }
+
+      // Fallback to traditional mutation
+      // Server-side check: read match and lock status atomically
       const { data: match } = await supabase
         .from('matches')
         .select('match_date, status')
@@ -67,59 +97,53 @@ export function usePredictions(userId?: string) {
         .single()
 
       if (!match) throw new Error('Partido no encontrado')
-      
-      if (new Date(match.match_date) <= new Date() || match.status !== 'pending') {
+
+      // Use centralized match locking (same function as client-side)
+      if (isMatchLockedForPrediction({
+        match_date: match.match_date,
+        status: match.status,
+        is_locked: false // server check only — DB handles is_locked via trigger
+      })) {
         throw new Error('El partido ya ha comenzado o está bloqueado')
       }
 
-      // Check if prediction already exists
-      const existingPrediction = getPredictionForMatch(matchId)
-
       try {
-        let result
-        if (existingPrediction) {
-          // Update
-          result = await supabase
-            .from('predictions')
-            .update({
-              home_score: homeScore,
-              away_score: awayScore,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingPrediction.id)
-            .select()
-            .single()
-        } else {
-          // Insert
-          result = await supabase
-            .from('predictions')
-            .insert({
-              user_id: userId,
-              match_id: matchId,
-              home_score: homeScore,
-              away_score: awayScore
-            })
-            .select()
-            .single()
-        }
+        // Use upsert to avoid race conditions — the database handles
+        // atomic insert-or-update via the (user_id, match_id) unique constraint.
+        // This eliminates the check-then-act race condition.
+        const result = await supabase
+          .from('predictions')
+          .upsert({
+            user_id: userId,
+            match_id: matchId,
+            home_score: homeScore,
+            away_score: awayScore,
+          }, {
+            onConflict: 'user_id,match_id',
+          })
+          .select()
+          .single()
 
         if (result.error) throw result.error
 
+        const savedPrediction = result.data as Prediction
+
         errorLogger.info({
-          operation: existingPrediction ? 'UPDATE' : 'CREATE',
+          operation: 'CREATE',
           entity: 'predictions',
-          message: existingPrediction ? 'Predicción actualizada' : 'Predicción guardada',
+          message: 'Predicción guardada (upsert)',
           userId,
           metadata: { matchId, homeScore, awayScore },
         })
 
-        return result.data as Prediction
-      } catch (err: any) {
+        return savedPrediction
+      } catch (err: unknown) {
+        const message = getSupabaseErrorMessage(err)
         errorLogger.error({
-          operation: existingPrediction ? 'UPDATE' : 'CREATE',
+          operation: 'CREATE',
           entity: 'predictions',
-          message: err.message || 'Error al guardar predicción',
-          statusCode: err.status || err.code,
+          message,
+          statusCode: getSupabaseStatusCode(err),
           userId,
           metadata: { matchId, homeScore, awayScore },
         })
@@ -150,12 +174,13 @@ export function usePredictions(userId?: string) {
           userId,
           metadata: { predictionId },
         })
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const message = getSupabaseErrorMessage(err)
         errorLogger.error({
           operation: 'DELETE',
           entity: 'predictions',
-          message: err.message || 'Error al eliminar predicción',
-          statusCode: err.status || err.code,
+          message,
+          statusCode: getSupabaseStatusCode(err),
           userId,
           metadata: { predictionId },
         })
@@ -192,9 +217,14 @@ export function usePredictions(userId?: string) {
     savePrediction,
     deletePrediction,
     getUserStats,
-    isSaving: savePrediction.isPending,
+    isSaving: isFormActionsEnabled ? isFormActionPending : savePrediction.isPending,
     isDeleting: deletePrediction.isPending,
-    saveError: savePrediction.error,
-    deleteError: deletePrediction.error
+    saveError: isFormActionsEnabled ? (formActionState.success ? null : formActionState.message) : savePrediction.error,
+    deleteError: deletePrediction.error,
+    // Form Actions specific
+    isFormActionsEnabled,
+    formActionState,
+    formAction,
+    isFormActionPending,
   }
 }

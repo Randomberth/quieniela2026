@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { errorLogger } from '@/lib/logger'
+import { safeCastMatches, safeCastTeams } from '@/types/utils'
+import { getSupabaseErrorMessage, getSupabaseStatusCode } from '@/types/supabase-augmented'
 import type { Match, Team } from '@/types'
 
 const STALE_TIME = 5 * 60 * 1000 // 5 minutes
@@ -23,24 +25,28 @@ export function useMatches() {
 
         if (error) throw error
 
+        const validMatches = safeCastMatches(data)
+
         errorLogger.info({
           operation: 'READ',
           entity: 'matches',
-          message: `${data.length} partidos cargados`,
+          message: `${validMatches.length} partidos cargados`,
         })
 
-        return (data as any[]).map(match => ({
+        // Map raw data to Match type with computed is_locked field
+        return validMatches.map(match => ({
           ...match,
           home_team: match.home_team as Team,
           away_team: match.away_team as Team,
           is_locked: new Date(match.match_date) <= new Date() || match.status !== 'pending'
         })) as Match[]
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const message = getSupabaseErrorMessage(err)
         errorLogger.error({
           operation: 'READ',
           entity: 'matches',
-          message: err.message || 'Error al cargar partidos',
-          statusCode: err.status || err.code,
+          message,
+          statusCode: getSupabaseStatusCode(err),
         })
         throw err
       }
@@ -48,7 +54,7 @@ export function useMatches() {
     staleTime: STALE_TIME
   })
 
-  const { data: teams } = useQuery({
+  const { data: teams, isLoading: teamsLoading, error: teamsError } = useQuery({
     queryKey: ['teams'],
     queryFn: async () => {
       try {
@@ -59,19 +65,22 @@ export function useMatches() {
 
         if (error) throw error
 
+        const validTeams = safeCastTeams(data)
+
         errorLogger.info({
           operation: 'READ',
           entity: 'matches',
-          message: `${data.length} equipos cargados`,
+          message: `${validTeams.length} equipos cargados`,
         })
 
-        return data as Team[]
-      } catch (err: any) {
+        return validTeams
+      } catch (err: unknown) {
+        const message = getSupabaseErrorMessage(err)
         errorLogger.error({
           operation: 'READ',
           entity: 'matches',
-          message: err.message || 'Error al cargar equipos',
-          statusCode: err.status || err.code,
+          message,
+          statusCode: getSupabaseStatusCode(err),
         })
         throw err
       }
@@ -110,8 +119,8 @@ export function useMatches() {
   return {
     matches,
     teams,
-    isLoading,
-    error,
+    isLoading: isLoading || teamsLoading,
+    error: error || teamsError,
     getMatchById,
     getMatchesByGroup,
     getMatchesByPhase,

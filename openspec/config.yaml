@@ -1,0 +1,70 @@
+# SDD OpenSpec Configuration - quinielaTeam4soft
+project: quinielaTeam4soft
+detected: 2026-06  
+session_preflight:
+  artifact_store: openspec
+  execution_mode: interactive
+  delivery_strategy: ask-always
+  review_budget: 400
+
+context:
+  name: World Cup 2026 Quiniela
+  stack:
+    - React 19.1 (Vite)
+    - TypeScript (strict mode)
+    - Tailwind CSS 4.3.0
+    - Shadcn/ui components
+    - Supabase (PostgreSQL + RLS)
+    - React Router DOM 7.17
+    - @tanstack/react-query
+  business_rules:
+    - Scoring: 3 points exact score, 1 point correct tendency, 0 points wrong
+    - Match locking: Predictions disabled when currentTime >= match_date
+    - Security: Users can only access own predictions via RLS
+    - Scale: 48 teams, 104 matches
+  conventions:
+    - Modular component architecture
+    - Custom hooks for data fetching (useMatches, usePredictions, etc.)
+    - TypeScript strict mode enabled
+    - ESLint with TypeScript and React hooks
+    - Aliased imports (@/ for src/)
+  timeline: "June 2026 (World Cup active) - Emergency corporate project"
+
+strict_tdd: false
+testing:
+  strict_tdd_mode: false
+  detected: 2026-06-13
+  test_runner:
+    command: "none"
+    framework: "none"
+  test_layers:
+    unit: false
+    integration: false
+    e2e: false
+  coverage:
+    available: false
+    command: "none"
+  quality_tools:
+    linter:
+      available: true
+      command: "npm run lint"
+      tool: "eslint with TypeScript and React hooks"
+    type_checker:
+      available: true
+      command: "tsc -b"
+      tool: "TypeScript strict mode"
+    formatter:
+      available: false
+      command: "none"
+      tool: "none"
+
+phases:
+  proposal: "OpenSpec specs/"
+  spec: "OpenSpec specs/"
+  design: "OpenSpec specs/"
+  tasks: "OpenSpec specs/"
+  apply: "Project root"
+  verify: "Testing capabilities limited - manual verification"
+  archive: "OpenSpec changes/archive/"
+
+registry: .atl/skill-registry.md
