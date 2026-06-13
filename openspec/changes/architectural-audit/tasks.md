@@ -38,14 +38,14 @@ Chain strategy: stacked-to-main
 
 ## Phase 2: Performance Optimization - Virtual Scrolling (Week 1)
 
-- [ ] 2.1 Install `@tanstack/react-virtual` and create feature flag in `src/config/feature-flags.ts`
-- [ ] 2.2 Create virtualized match list component: `src/components/matches/VirtualMatchList.tsx`
-- [ ] 2.3 Create virtual match card component: `src/components/matches/VirtualMatchCard.tsx` (optimized)
-- [ ] 2.4 Implement virtualization provider: `src/components/matches/VirtualizationProvider.tsx`
-- [ ] 2.5 Update MatchList component to conditionally use VirtualMatchList based on feature flag
-- [ ] 2.6 Add performance monitoring: `src/utils/performance.ts` with metrics collection
-- [ ] 2.7 Write integration tests for virtual scrolling in `test/components/matches/VirtualMatchList.test.tsx`
-- [ ] 2.8 Add fallback mechanism when virtualization fails (non-breaking)
+- [x] 2.1 Install `@tanstack/react-virtual` and create feature flag in `src/config/feature-flags.ts`
+- [x] 2.2 Create virtualized match list component: `src/components/matches/virtualization/VirtualizationProvider.tsx`
+- [x] 2.3 Create virtual match card component: `src/components/matches/virtualization/VirtualMatchCard.tsx` (optimized)
+- [x] 2.4 Implement virtualization provider: `src/components/matches/virtualization/VirtualMatchList.tsx`
+- [x] 2.5 Update MatchList component to conditionally use VirtualMatchList based on feature flag
+- [x] 2.6 Add performance monitoring: `src/utils/performance.ts` with metrics collection
+- [x] 2.7 Write integration tests for virtual scrolling in `test/components/matches/virtualization/VirtualMatchList.test.tsx`
+- [x] 2.8 Add fallback mechanism when virtualization fails (non-breaking)
 
 ## Phase 3: React 19 Form Actions Migration (Week 2)
 
