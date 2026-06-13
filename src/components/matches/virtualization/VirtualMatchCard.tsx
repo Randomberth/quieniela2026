@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, memo } from 'react';
+import { useState, useCallback, useMemo, memo, useRef } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { shouldDisablePredictionInputs, validatePredictionScores } from '@/utils/matchValidation';
+import { isFeatureEnabled } from '@/config/feature-flags';
 import type { Match } from '@/types';
 import type { Prediction } from '@/types';
 
@@ -18,6 +19,8 @@ interface VirtualMatchCardProps {
   userId?: string;
   compact?: boolean;
   style?: React.CSSProperties; // Required for virtualization
+  formAction?: (formData: FormData) => void;
+  isFormActionPending?: boolean;
 }
 
 export const VirtualMatchCard = memo(function VirtualMatchCard({ 
@@ -27,11 +30,17 @@ export const VirtualMatchCard = memo(function VirtualMatchCard({
   userId,
   compact = false,
   style,
+  formAction,
+  isFormActionPending = false
 }: VirtualMatchCardProps) {
   const [homeScore, setHomeScore] = useState<string>(prediction?.home_score?.toString() || '');
   const [awayScore, setAwayScore] = useState<string>(prediction?.away_score?.toString() || '');
   const [hasChanges, setHasChanges] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  
+  const isFormActionsEnabled = isFeatureEnabled('react-19-form-actions');
+  const isUsingFormActions = isFormActionsEnabled && !!formAction;
 
   // Check if match is locked (centralized validation)
   const isLocked = useMemo(() => {
@@ -60,7 +69,7 @@ export const VirtualMatchCard = memo(function VirtualMatchCard({
 
   // Handle save
   const handleSave = useCallback(async () => {
-    if (!onSavePrediction || !userId || isLocked) return;
+    if (!userId || isLocked) return;
     
     const home = parseInt(homeScore, 10);
     const away = parseInt(awayScore, 10);
@@ -68,6 +77,20 @@ export const VirtualMatchCard = memo(function VirtualMatchCard({
     const scoreCheck = validatePredictionScores(home, away);
     if (!scoreCheck.valid) return;
 
+    // If using Form Actions, submit via form
+    if (isUsingFormActions && formAction) {
+      const formData = new FormData()
+      formData.append('matchId', match.id)
+      formData.append('userId', userId)
+      formData.append('homeScore', homeScore)
+      formData.append('awayScore', awayScore)
+      formAction(formData)
+      return
+    }
+
+    // Traditional approach
+    if (!onSavePrediction) return;
+    
     setIsSubmitting(true);
     try {
       await onSavePrediction(match.id, home, away);
@@ -75,7 +98,7 @@ export const VirtualMatchCard = memo(function VirtualMatchCard({
     } finally {
       setIsSubmitting(false);
     }
-  }, [onSavePrediction, match.id, homeScore, awayScore, userId, isLocked]);
+  }, [onSavePrediction, match.id, homeScore, awayScore, userId, isLocked, isUsingFormActions, formAction]);
 
   // Get status badge
   const getStatusBadge = () => {
@@ -99,6 +122,9 @@ export const VirtualMatchCard = memo(function VirtualMatchCard({
         );
     }
   };
+
+  // Combined submission state
+  const submissionState = isUsingFormActions ? isFormActionPending : isSubmitting
 
   // Get points badge if prediction exists
   const getPointsBadge = () => {
@@ -170,6 +196,16 @@ export const VirtualMatchCard = memo(function VirtualMatchCard({
           "pt-0",
           compact && "p-4 pt-0"
         )}>
+          {/* Form for Form Actions */}
+          {isUsingFormActions && userId && (
+            <form ref={formRef} action={formAction} className="hidden">
+              <input type="hidden" name="matchId" value={match.id} />
+              <input type="hidden" name="userId" value={userId} />
+              <input type="hidden" name="homeScore" value={homeScore} />
+              <input type="hidden" name="awayScore" value={awayScore} />
+            </form>
+          )}
+
           {/* Teams and scores */}
           <div className="grid grid-cols-12 gap-4 items-center mb-4">
             {/* Home team */}
@@ -229,58 +265,58 @@ export const VirtualMatchCard = memo(function VirtualMatchCard({
             )}>
               <div className="grid grid-cols-12 gap-2 items-center">
                 <div className="col-span-5 text-right">
-                  <Input
-                    type="number"
-                    min="0"
-                    max="99"
-                    value={homeScore}
-                    onChange={(e) => handleHomeScoreChange(e.target.value)}
-                    disabled={isLocked || isSubmitting}
-                    className={cn(
-                      "text-center",
-                      isLocked && "opacity-50 cursor-not-allowed"
-                    )}
-                    placeholder="0"
-                  />
+<Input
+                     type="number"
+                     min="0"
+                     max="99"
+                     value={homeScore}
+                     onChange={(e) => handleHomeScoreChange(e.target.value)}
+                     disabled={isLocked || submissionState}
+                     className={cn(
+                       "text-center",
+                       isLocked && "opacity-50 cursor-not-allowed"
+                     )}
+                     placeholder="0"
+                   />
                 </div>
                 
                 <div className="col-span-2 text-center text-gray-400">-</div>
                 
                 <div className="col-span-5 text-left">
-                  <Input
-                    type="number"
-                    min="0"
-                    max="99"
-                    value={awayScore}
-                    onChange={(e) => handleAwayScoreChange(e.target.value)}
-                    disabled={isLocked || isSubmitting}
-                    className={cn(
-                      "text-center",
-                      isLocked && "opacity-50 cursor-not-allowed"
-                    )}
-                    placeholder="0"
-                  />
+<Input
+                     type="number"
+                     min="0"
+                     max="99"
+                     value={awayScore}
+                     onChange={(e) => handleAwayScoreChange(e.target.value)}
+                     disabled={isLocked || submissionState}
+                     className={cn(
+                       "text-center",
+                       isLocked && "opacity-50 cursor-not-allowed"
+                     )}
+                     placeholder="0"
+                   />
                 </div>
               </div>
 
               {!isLocked && (
-                <Button
-                  onClick={handleSave}
-                  disabled={!hasChanges || isSubmitting}
-                  className="w-full"
-                  size={compact ? "sm" : "default"}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      GUARDANDO...
-                    </>
-                  ) : hasPrediction ? (
-                    hasChanges ? 'ACTUALIZAR' : 'PREDICCIÓN GUARDADA'
-                  ) : (
-                    'GUARDAR PREDICCIÓN'
-                  )}
-                </Button>
+<Button
+                   onClick={handleSave}
+                   disabled={!hasChanges || submissionState}
+                   className="w-full"
+                   size={compact ? "sm" : "default"}
+                 >
+                   {submissionState ? (
+                     <>
+                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                       GUARDANDO...
+                     </>
+                   ) : hasPrediction ? (
+                     hasChanges ? 'ACTUALIZAR' : 'PREDICCIÓN GUARDADA'
+                   ) : (
+                     'GUARDAR PREDICCIÓN'
+                   )}
+                 </Button>
               )}
 
               {isLocked && (

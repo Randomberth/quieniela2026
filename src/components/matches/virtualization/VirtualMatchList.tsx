@@ -12,6 +12,8 @@ interface VirtualMatchListProps {
   userId?: string;
   containerHeight?: number;
   overscan?: number;
+  formAction?: (formData: FormData) => void;
+  isFormActionPending?: boolean;
 }
 
 export function VirtualMatchList({
@@ -21,6 +23,8 @@ export function VirtualMatchList({
   userId,
   containerHeight = 600,
   overscan = 5,
+  formAction,
+  isFormActionPending,
 }: VirtualMatchListProps) {
   const { isEnabled, estimatedItemHeight, compatibility } = useVirtualization();
   const parentRef = useRef<HTMLDivElement>(null);
@@ -56,14 +60,16 @@ export function VirtualMatchList({
         )}
         
         {matches.map(match => (
-          <VirtualMatchCard
-            key={match.id}
-            match={match}
-            prediction={predictionMap.get(match.id)}
-            onSavePrediction={onSavePrediction}
-            userId={userId}
-            style={undefined}
-          />
+<VirtualMatchCard
+             key={match.id}
+match={match}
+                    prediction={predictionMap.get(match.id)}
+                    onSavePrediction={onSavePrediction}
+                    userId={userId}
+                    style={undefined}
+                    formAction={formAction}
+                    isFormActionPending={isFormActionPending}
+                  />
         ))}
       </div>
     );
@@ -114,13 +120,15 @@ export function VirtualMatchList({
                 role="listitem"
                 aria-label={`Partido ${virtualItem.index + 1} de ${matches.length}`}
               >
-                <VirtualMatchCard
-                  match={match}
-                  prediction={predictionMap.get(match.id)}
-                  onSavePrediction={onSavePrediction}
-                  userId={userId}
-                  style={undefined}
-                />
+<VirtualMatchCard
+                   match={match}
+                   prediction={predictionMap.get(match.id)}
+                   onSavePrediction={onSavePrediction}
+                   userId={userId}
+                   style={undefined}
+                   formAction={formAction}
+isFormActionPending={isFormActionPending}
+                  />
               </div>
             );
           })}
@@ -156,6 +164,8 @@ interface GroupedVirtualMatchListProps {
   onSavePrediction?: (matchId: string, homeScore: number, awayScore: number) => void;
   userId?: string;
   containerHeight?: number;
+  formAction?: (formData: FormData) => void;
+  isFormActionPending?: boolean;
 }
 
 export function GroupedVirtualMatchList({
@@ -163,7 +173,9 @@ export function GroupedVirtualMatchList({
   predictions = [],
   onSavePrediction,
   userId,
-  containerHeight = 800,
+  containerHeight = 600,
+  formAction,
+  isFormActionPending,
 }: GroupedVirtualMatchListProps) {
   const { isEnabled, compatibility } = useVirtualization();
   const parentRef = useRef<HTMLDivElement>(null);
@@ -307,13 +319,15 @@ export function GroupedVirtualMatchList({
                   </div>
                 )}
                 
-                <VirtualMatchCard
-                  match={match}
-                  prediction={predictionMap.get(match.id)}
-                  onSavePrediction={onSavePrediction}
-                  userId={userId}
-                  style={undefined}
-                />
+<VirtualMatchCard
+                   match={match}
+                   prediction={predictionMap.get(match.id)}
+                   onSavePrediction={onSavePrediction}
+                   userId={userId}
+                   style={undefined}
+                   formAction={formAction}
+isFormActionPending={isFormActionPending}
+                  />
               </div>
             );
           })}

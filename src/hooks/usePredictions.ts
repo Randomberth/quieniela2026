@@ -1,13 +1,17 @@
+import { useActionState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { errorLogger } from '@/lib/logger'
 import { safeCastPredictions } from '@/types/utils'
 import { getSupabaseErrorMessage, getSupabaseStatusCode } from '@/types/supabase-augmented'
 import { isMatchLockedForPrediction } from '@/utils/matchValidation'
+import { isFeatureEnabled } from '@/config/feature-flags'
+import { submitPredictionAction, type PredictionFormState } from '@/actions/predictions'
 import type { Prediction } from '@/types'
 
 export function usePredictions(userId?: string) {
   const queryClient = useQueryClient()
+  const isFormActionsEnabled = isFeatureEnabled('react-19-form-actions')
 
   const { data: predictions, isLoading, error } = useQuery({
     queryKey: ['predictions', userId],
@@ -53,6 +57,12 @@ export function usePredictions(userId?: string) {
     return predictions?.find(p => p.match_id === matchId)
   }
 
+  // React 19 Form Action state
+  const [formActionState, formAction, isFormActionPending] = useActionState(
+    submitPredictionAction,
+    { success: false, message: '' } as PredictionFormState
+  );
+
   const savePrediction = useMutation({
     mutationFn: async ({
       matchId,
@@ -65,6 +75,20 @@ export function usePredictions(userId?: string) {
     }) => {
       if (!userId) throw new Error('Usuario no autenticado')
 
+      // If Form Actions are enabled, use the new approach
+      if (isFormActionsEnabled) {
+        const formData = new FormData()
+        formData.append('matchId', matchId)
+        formData.append('userId', userId)
+        formData.append('homeScore', homeScore.toString())
+        formData.append('awayScore', awayScore.toString())
+
+        // This will trigger the form action
+        await formAction(formData)
+        return null // Form action handles state separately
+      }
+
+      // Fallback to traditional mutation
       // Server-side check: read match and lock status atomically
       const { data: match } = await supabase
         .from('matches')
@@ -193,9 +217,14 @@ export function usePredictions(userId?: string) {
     savePrediction,
     deletePrediction,
     getUserStats,
-    isSaving: savePrediction.isPending,
+    isSaving: isFormActionsEnabled ? isFormActionPending : savePrediction.isPending,
     isDeleting: deletePrediction.isPending,
-    saveError: savePrediction.error,
-    deleteError: deletePrediction.error
+    saveError: isFormActionsEnabled ? (formActionState.success ? null : formActionState.message) : savePrediction.error,
+    deleteError: deletePrediction.error,
+    // Form Actions specific
+    isFormActionsEnabled,
+    formActionState,
+    formAction,
+    isFormActionPending,
   }
 }

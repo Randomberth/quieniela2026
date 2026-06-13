@@ -22,8 +22,8 @@ const FEATURE_FLAGS: FeatureFlag[] = [
     id: 'react-19-form-actions',
     name: 'React 19 Form Actions',
     description: 'Migrate forms to use React 19 Form Actions with useActionState',
-    enabled: false,
-    rolloutPercentage: 0,
+    enabled: true, // Enable for testing
+    rolloutPercentage: 100,
   },
   {
     id: 'strict-typescript',

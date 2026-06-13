@@ -15,7 +15,13 @@ import { es } from 'date-fns/locale';
 function MatchListContent() {
   const { user } = useAuth();
   const { matches, teams: _teams, isLoading, error, getMatchesByPhase } = useMatches();
-  const { predictions, savePrediction } = usePredictions(user?.id);
+  const { 
+    predictions, 
+    savePrediction, 
+    isFormActionsEnabled,
+    formAction,
+    isFormActionPending,
+  } = usePredictions(user?.id);
   const { isEnabled: isVirtualizationEnabled } = useVirtualization();
   
   const [filter, _setFilter] = useState<'all' | 'upcoming' | 'live' | 'finished'>('all');
@@ -199,6 +205,8 @@ function MatchListContent() {
                   userId={user?.id}
                   containerHeight={600}
                   overscan={5}
+                  formAction={user && isFormActionsEnabled ? formAction : undefined}
+                  isFormActionPending={isFormActionPending}
                 />
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
@@ -209,7 +217,9 @@ function MatchListContent() {
                       prediction={predictions?.find(p => p.match_id === match.id)}
                       onSavePrediction={user ? handleSavePrediction : undefined}
                       userId={user?.id}
-                    />
+formAction={user && isFormActionsEnabled ? formAction : undefined}
+                  isFormActionPending={isFormActionPending}
+                />
                   ))}
                 </div>
               )}
@@ -225,7 +235,9 @@ function MatchListContent() {
               onSavePrediction={user ? handleSavePrediction : undefined}
               userId={user?.id}
               containerHeight={600}
-            />
+formAction={user && isFormActionsEnabled ? formAction : undefined}
+                  isFormActionPending={isFormActionPending}
+                />
           ) : (
             <div className="space-y-8">
               {knockoutGroups
@@ -237,13 +249,15 @@ function MatchListContent() {
                     </h3>
                     <div className="grid gap-4 md:grid-cols-2">
                       {group.matches.map(match => (
-                        <MatchCard
-                          key={match.id}
-                          match={match}
-                          prediction={predictions?.find(p => p.match_id === match.id)}
-                          onSavePrediction={user ? handleSavePrediction : undefined}
-                          userId={user?.id}
-                        />
+<MatchCard
+                           key={match.id}
+                           match={match}
+                           prediction={predictions?.find(p => p.match_id === match.id)}
+                           onSavePrediction={user ? handleSavePrediction : undefined}
+                           userId={user?.id}
+                           formAction={user && isFormActionsEnabled ? formAction : undefined}
+                           isFormActionPending={isFormActionPending}
+                         />
                       ))}
                     </div>
                   </div>
@@ -260,7 +274,9 @@ function MatchListContent() {
               onSavePrediction={user ? handleSavePrediction : undefined}
               userId={user?.id}
               containerHeight={400}
-            />
+formAction={user && isFormActionsEnabled ? formAction : undefined}
+                  isFormActionPending={isFormActionPending}
+                />
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {quarterGroups.flatMap(group => group.matches).map(match => (
@@ -270,6 +286,8 @@ function MatchListContent() {
                   prediction={predictions?.find(p => p.match_id === match.id)}
                   onSavePrediction={user ? handleSavePrediction : undefined}
                   userId={user?.id}
+                  formAction={user && isFormActionsEnabled ? formAction : undefined}
+                  isFormActionPending={isFormActionPending}
                 />
               ))}
             </div>
@@ -284,7 +302,9 @@ function MatchListContent() {
               onSavePrediction={user ? handleSavePrediction : undefined}
               userId={user?.id}
               containerHeight={500}
-            />
+formAction={user && isFormActionsEnabled ? formAction : undefined}
+                  isFormActionPending={isFormActionPending}
+                />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 max-w-4xl mx-auto">
               {semifinalGroups.flatMap(group => group.matches).map(match => (
@@ -294,6 +314,8 @@ function MatchListContent() {
                   prediction={predictions?.find(p => p.match_id === match.id)}
                   onSavePrediction={user ? handleSavePrediction : undefined}
                   userId={user?.id}
+                  formAction={user && isFormActionsEnabled ? formAction : undefined}
+                  isFormActionPending={isFormActionPending}
                 />
               ))}
             </div>

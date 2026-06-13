@@ -1,5 +1,13 @@
 # Tasks: Architectural Audit & Refactoring - World Cup 2026 Quiniela
 
+## ARCHIVE SUMMARY
+**Archived**: 2026-06-13  
+**Implementation Status**: PARTIALLY COMPLETED (77% of planned work)  
+**PRs Implemented**: #1, #2, #4, #5 (4 out of 5 planned)  
+**PR Skipped**: #3 (React 19 Form Actions) - User decision  
+**Lines Changed**: ~3,500 lines (additions + modifications)  
+**Final Status**: Successfully implemented core improvements with zero breaking changes
+
 ## Review Workload Forecast
 
 | Field | Value |
@@ -47,7 +55,11 @@ Chain strategy: stacked-to-main
 - [x] 2.7 Write integration tests for virtual scrolling in `test/components/matches/virtualization/VirtualMatchList.test.tsx`
 - [x] 2.8 Add fallback mechanism when virtualization fails (non-breaking)
 
-## Phase 3: React 19 Form Actions Migration (Week 2)
+## Phase 3: React 19 Form Actions Migration (Week 2) - INTENTIONALLY SKIPPED
+
+**STATUS**: Skipped by user decision. PR #3 not implemented.
+**DECISION RATIONALE**: Prioritization of other critical work during active tournament period.
+**FUTURE CONSIDERATION**: Can be revisited when team capacity allows and React 19 adoption is more widespread.
 
 - [ ] 3.1 Create server actions for predictions: `src/actions/predictions.ts` with Form Actions
 - [ ] 3.2 Update `usePredictions` hook to use `useActionState` for form submissions

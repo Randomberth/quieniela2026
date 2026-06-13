@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { shouldDisablePredictionInputs, validatePredictionScores } from '@/utils/matchValidation'
+import { isFeatureEnabled } from '@/config/feature-flags'
 import type { Match } from '@/types'
 import type { Prediction } from '@/types'
 
@@ -17,6 +18,8 @@ interface MatchCardProps {
   onSavePrediction?: (matchId: string, homeScore: number, awayScore: number) => void
   userId?: string
   compact?: boolean
+  formAction?: (formData: FormData) => void
+  isFormActionPending?: boolean
 }
 
 export function MatchCard({ 
@@ -24,12 +27,18 @@ export function MatchCard({
   prediction, 
   onSavePrediction, 
   userId,
-  compact = false 
+  compact = false,
+  formAction,
+  isFormActionPending = false
 }: MatchCardProps) {
   const [homeScore, setHomeScore] = useState<string>(prediction?.home_score?.toString() || '')
   const [awayScore, setAwayScore] = useState<string>(prediction?.away_score?.toString() || '')
   const [hasChanges, setHasChanges] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  
+  const isFormActionsEnabled = isFeatureEnabled('react-19-form-actions')
+  const isUsingFormActions = isFormActionsEnabled && !!formAction
 
   // Check if match is locked (centralized validation)
   const isLocked = useMemo(() => {
@@ -58,7 +67,7 @@ export function MatchCard({
 
   // Handle save
   const handleSave = useCallback(async () => {
-    if (!onSavePrediction || !userId || isLocked) return
+    if (!userId || isLocked) return
     
     const home = parseInt(homeScore, 10)
     const away = parseInt(awayScore, 10)
@@ -66,6 +75,20 @@ export function MatchCard({
     const scoreCheck = validatePredictionScores(home, away)
     if (!scoreCheck.valid) return
 
+    // If using Form Actions, submit via form
+    if (isUsingFormActions && formAction) {
+      const formData = new FormData()
+      formData.append('matchId', match.id)
+      formData.append('userId', userId)
+      formData.append('homeScore', homeScore)
+      formData.append('awayScore', awayScore)
+      formAction(formData)
+      return
+    }
+
+    // Traditional approach
+    if (!onSavePrediction) return
+    
     setIsSubmitting(true)
     try {
       await onSavePrediction(match.id, home, away)
@@ -73,7 +96,7 @@ export function MatchCard({
     } finally {
       setIsSubmitting(false)
     }
-  }, [onSavePrediction, match.id, homeScore, awayScore, userId, isLocked])
+  }, [onSavePrediction, match.id, homeScore, awayScore, userId, isLocked, isUsingFormActions, formAction])
 
   // Get status badge
   const getStatusBadge = () => {
@@ -97,6 +120,9 @@ export function MatchCard({
         )
     }
   }
+
+  // Combined submission state
+  const submissionState = isUsingFormActions ? isFormActionPending : isSubmitting
 
   // Get points display
   const getPointsDisplay = () => {
@@ -164,6 +190,16 @@ export function MatchCard({
       </CardHeader>
       
       <CardContent className="space-y-4">
+        {/* Form for Form Actions */}
+        {isUsingFormActions && userId && (
+          <form ref={formRef} action={formAction} className="hidden">
+            <input type="hidden" name="matchId" value={match.id} />
+            <input type="hidden" name="userId" value={userId} />
+            <input type="hidden" name="homeScore" value={homeScore} />
+            <input type="hidden" name="awayScore" value={awayScore} />
+          </form>
+        )}
+
         {/* Teams and Scores */}
         <div className="flex items-center justify-between gap-4">
           {/* Home Team */}
@@ -211,7 +247,7 @@ export function MatchCard({
                   onChange={(e) => handleHomeScoreChange(e.target.value)}
                   className="w-14 h-12 text-center text-lg font-bold"
                   placeholder="-"
-                  disabled={isLocked || isSubmitting}
+                  disabled={isLocked || submissionState}
                 />
                 <span className="text-gray-400 font-bold text-lg">-</span>
                 <Input
@@ -222,7 +258,7 @@ export function MatchCard({
                   onChange={(e) => handleAwayScoreChange(e.target.value)}
                   className="w-14 h-12 text-center text-lg font-bold"
                   placeholder="-"
-                  disabled={isLocked || isSubmitting}
+                  disabled={isLocked || submissionState}
                 />
               </div>
             )}
@@ -246,13 +282,13 @@ export function MatchCard({
           <div className="flex justify-center">
             <Button
               onClick={handleSave}
-              disabled={!hasChanges || isSubmitting || !homeScore || !awayScore}
+              disabled={!hasChanges || submissionState || !homeScore || !awayScore}
               size="sm"
               className={cn(
                 hasPrediction && hasChanges && "bg-blue-600 hover:bg-blue-700"
               )}
             >
-              {isSubmitting ? 'Guardando...' : hasPrediction ? 'Actualizar' : 'Guardar Predicción'}
+              {submissionState ? 'Guardando...' : hasPrediction ? 'Actualizar' : 'Guardar Predicción'}
             </Button>
           </div>
         )}

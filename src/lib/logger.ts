@@ -1,5 +1,5 @@
 export type LogLevel = 'error' | 'warning' | 'info'
-export type LogOperation = 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'AUTH' | 'RATE_LIMIT' | 'ERROR'
+export type LogOperation = 'CREATE' | 'READ' | 'UPDATE' | 'DELETE' | 'AUTH' | 'RATE_LIMIT' | 'ERROR' | 'UPSERT' | 'FORM_ACTION'
 export type LogEntity = 'auth' | 'matches' | 'predictions' | 'leaderboard' | 'profile' | 'global'
 
 export interface ErrorLog {
