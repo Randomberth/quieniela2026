@@ -53,19 +53,19 @@ class BrowserCompatibilityDetector {
     if (userAgent.indexOf('chrome') > -1 && userAgent.indexOf('edge') === -1) {
       browserName = 'chrome';
       const match = userAgent.match(/chrome\/(\d+)/);
-      browserVersion = match ? match[1] : 'unknown';
+      browserVersion = match?.[1] ?? 'unknown';
     } else if (userAgent.indexOf('firefox') > -1) {
       browserName = 'firefox';
       const match = userAgent.match(/firefox\/(\d+)/);
-      browserVersion = match ? match[1] : 'unknown';
+      browserVersion = match?.[1] ?? 'unknown';
     } else if (userAgent.indexOf('safari') > -1 && userAgent.indexOf('chrome') === -1) {
       browserName = 'safari';
       const match = userAgent.match(/version\/(\d+)/);
-      browserVersion = match ? match[1] : 'unknown';
+      browserVersion = match?.[1] ?? 'unknown';
     } else if (userAgent.indexOf('edge') > -1) {
       browserName = 'edge';
       const match = userAgent.match(/edge\/(\d+)/);
-      browserVersion = match ? match[1] : 'unknown';
+      browserVersion = match?.[1] ?? 'unknown';
     }
 
     // Check for required APIs

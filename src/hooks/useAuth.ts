@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { errorLogger } from '@/lib/logger'
+import { isUserProfile } from '@/types/utils'
+import { getSupabaseErrorMessage } from '@/types/supabase-augmented'
 import type { User } from '@supabase/supabase-js'
+import type { UserProfile } from '@/types'
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,12 +44,18 @@ export function useAuth() {
         .single()
 
       if (error) throw error
-      setProfile(data)
-    } catch (err) {
+
+      if (isUserProfile(data)) {
+        setProfile(data)
+      } else {
+        console.warn('[useAuth] Profile data failed type validation', data)
+        setProfile(data as UserProfile)
+      }
+    } catch (err: unknown) {
       errorLogger.error({
         operation: 'READ',
         entity: 'profile',
-        message: (err as Error).message || 'Error fetching profile',
+        message: getSupabaseErrorMessage(err),
         userId,
       })
       console.error('Error fetching profile:', err)
@@ -82,16 +91,17 @@ export function useAuth() {
         userId: data.user?.id,
       })
       
-      return { success: true, user: data.user }
-    } catch (err: any) {
+      return { success: true as const, user: data.user }
+    } catch (err: unknown) {
+      const message = getSupabaseErrorMessage(err)
       errorLogger.error({
         operation: 'AUTH',
         entity: 'auth',
-        message: err.message || 'Error al registrar',
+        message,
         metadata: { email },
       })
-      setError(err.message)
-      return { success: false, error: err.message }
+      setError(message)
+      return { success: false as const, error: message }
     }
   }, [])
 
@@ -112,16 +122,17 @@ export function useAuth() {
         userId: data.user?.id,
       })
       
-      return { success: true, user: data.user }
-    } catch (err: any) {
+      return { success: true as const, user: data.user }
+    } catch (err: unknown) {
+      const message = getSupabaseErrorMessage(err)
       errorLogger.error({
         operation: 'AUTH',
         entity: 'auth',
-        message: err.message || 'Error al iniciar sesión',
+        message,
         metadata: { email },
       })
-      setError(err.message)
-      return { success: false, error: err.message }
+      setError(message)
+      return { success: false as const, error: message }
     }
   }, [])
 
@@ -135,15 +146,16 @@ export function useAuth() {
         entity: 'auth',
         message: 'Sesión cerrada',
       })
-      return { success: true }
-    } catch (err: any) {
+      return { success: true as const }
+    } catch (err: unknown) {
+      const message = getSupabaseErrorMessage(err)
       errorLogger.error({
         operation: 'AUTH',
         entity: 'auth',
-        message: err.message || 'Error al cerrar sesión',
+        message,
       })
-      setError(err.message)
-      return { success: false, error: err.message }
+      setError(message)
+      return { success: false as const, error: message }
     }
   }, [])
 

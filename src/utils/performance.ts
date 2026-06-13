@@ -202,7 +202,7 @@ export function usePerformanceMeasurement(componentName: string) {
     performance.measure(`${componentName}-render`, startMark, endMark);
     
     const measures = performance.getEntriesByName(`${componentName}-render`);
-    const renderTime = measures.length > 0 ? measures[0].duration : 0;
+    const renderTime = measures.length > 0 ? measures[0]!.duration : 0;
     
     // Clean up marks
     performance.clearMarks(startMark);

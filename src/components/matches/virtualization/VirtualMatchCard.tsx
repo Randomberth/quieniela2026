@@ -7,6 +7,7 @@ import { Lock, Unlock, Trophy, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { shouldDisablePredictionInputs, validatePredictionScores } from '@/utils/matchValidation';
 import type { Match } from '@/types';
 import type { Prediction } from '@/types';
 
@@ -32,13 +33,9 @@ export const VirtualMatchCard = memo(function VirtualMatchCard({
   const [hasChanges, setHasChanges] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check if match is locked
+  // Check if match is locked (centralized validation)
   const isLocked = useMemo(() => {
-    if (match.status !== 'pending') return true;
-    if (match.is_locked) return true;
-    const matchDate = new Date(match.match_date);
-    const now = new Date();
-    return now >= matchDate;
+    return shouldDisablePredictionInputs(match);
   }, [match.status, match.is_locked, match.match_date]);
 
   // Check if prediction exists
@@ -68,9 +65,8 @@ export const VirtualMatchCard = memo(function VirtualMatchCard({
     const home = parseInt(homeScore, 10);
     const away = parseInt(awayScore, 10);
     
-    if (isNaN(home) || isNaN(away) || home < 0 || away < 0) {
-      return;
-    }
+    const scoreCheck = validatePredictionScores(home, away);
+    if (!scoreCheck.valid) return;
 
     setIsSubmitting(true);
     try {

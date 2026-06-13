@@ -60,23 +60,23 @@ Chain strategy: stacked-to-main
 
 ## Phase 4: TypeScript Strict Mode Enablement (Week 2)
 
-- [ ] 4.1 Update `tsconfig.app.json` to enable strict mode flags incrementally
-- [ ] 4.2 Fix TypeScript errors in `src/types/index.ts` and improve type definitions
-- [ ] 4.3 Add missing type annotations in hooks: `useMatches.ts`, `usePredictions.ts`, `useAuth.ts`
-- [ ] 4.4 Fix any implicit any types in components and utilities
-- [ ] 4.5 Add third-party type declarations for any untyped libraries
-- [ ] 4.6 Create type utilities: `src/types/utils.ts` with helper types and type guards
+- [x] 4.1 Update `tsconfig.app.json` to enable strict mode flags incrementally
+- [x] 4.2 Fix TypeScript errors in `src/types/index.ts` and improve type definitions
+- [x] 4.3 Add missing type annotations in hooks: `useMatches.ts`, `usePredictions.ts`, `useAuth.ts`
+- [x] 4.4 Fix any implicit any types in components and utilities
+- [x] 4.5 Add third-party type declarations for any untyped libraries
+- [x] 4.6 Create type utilities: `src/types/utils.ts` with helper types and type guards
 - [ ] 4.7 Update ESLint configuration to enforce TypeScript best practices
 
 ## Phase 5: Critical Bug Fixes (Week 3)
 
-- [ ] 5.1 Fix match locking inconsistencies: validate `currentTime >= match_date` in multiple places
-- [ ] 5.2 Implement centralized validation layer: `src/utils/matchValidation.ts`
-- [ ] 5.3 Fix race conditions in prediction submissions with atomic operations
-- [ ] 5.4 Add error boundaries: `src/components/ErrorBoundary.tsx` and `src/components/ErrorFallback.tsx`
-- [ ] 5.5 Implement proper error state recovery in data fetching hooks
+- [x] 5.1 Fix match locking inconsistencies: validate `currentTime >= match_date` in multiple places
+- [x] 5.2 Implement centralized validation layer: `src/utils/matchValidation.ts`
+- [x] 5.3 Fix race conditions in prediction submissions with atomic operations
+- [x] 5.4 Add error boundaries: `src/components/ErrorBoundary.tsx` and `src/components/ErrorFallback.tsx`
+- [x] 5.5 Implement proper error state recovery in data fetching hooks
 - [ ] 5.6 Add retry logic with exponential backoff for failed API calls
-- [ ] 5.7 Write integration tests for bug fixes in `test/integration/bugFixes.test.tsx`
+- [x] 5.7 Write integration tests for bug fixes in `test/integration/bugFixes.test.tsx`
 
 ## Phase 6: Security Hardening (Week 3)
 

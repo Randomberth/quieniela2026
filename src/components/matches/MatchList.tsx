@@ -172,7 +172,7 @@ function MatchListContent() {
                 
                 <div className="text-center">
                   <h3 className="text-lg font-semibold text-gray-800">
-                    {format(new Date(matchesByDate[currentDateIndex][0]), "EEEE d 'de' MMMM", { locale: es })}
+                    {format(new Date(matchesByDate[currentDateIndex]![0]), "EEEE d 'de' MMMM", { locale: es })}
                   </h3>
                   <p className="text-sm text-gray-500">
                     Día {currentDateIndex + 1} de {matchesByDate.length}
@@ -193,7 +193,7 @@ function MatchListContent() {
               {/* Matches Grid - Virtualized or Regular */}
               {shouldUseVirtualizationForCurrentDate ? (
                 <VirtualMatchList
-                  matches={matchesByDate[currentDateIndex][1]}
+                  matches={matchesByDate[currentDateIndex]![1]}
                   predictions={predictions}
                   onSavePrediction={user ? handleSavePrediction : undefined}
                   userId={user?.id}
@@ -202,7 +202,7 @@ function MatchListContent() {
                 />
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {matchesByDate[currentDateIndex][1].map(match => (
+                  {matchesByDate[currentDateIndex]![1].map(match => (
                     <MatchCard
                       key={match.id}
                       match={match}

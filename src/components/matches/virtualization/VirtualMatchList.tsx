@@ -98,6 +98,7 @@ export function VirtualMatchList({
         >
           {virtualItems.map(virtualItem => {
             const match = matches[virtualItem.index];
+            if (!match) return null;
             return (
               <div
                 key={match.id}
@@ -274,6 +275,7 @@ export function GroupedVirtualMatchList({
           {virtualItems.map(virtualItem => {
             const matchIndex = virtualItem.index;
             const match = allMatches[matchIndex];
+            if (!match) return null;
             
             // Find which group this match belongs to
             const groupInfo = groupOffsets.find(
