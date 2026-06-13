@@ -80,13 +80,13 @@ Chain strategy: stacked-to-main
 
 ## Phase 6: Security Hardening (Week 3)
 
-- [ ] 6.1 Create RLS policy audit script: `scripts/audit-rls-policies.js`
-- [ ] 6.2 Review and strengthen input validation in `src/utils/validation.ts`
-- [ ] 6.3 Implement XSS protection for user-generated content display
-- [ ] 6.4 Add rate limiting awareness to frontend error handling
-- [ ] 6.5 Secure error messages to avoid information disclosure
-- [ ] 6.6 Audit authentication flow in `useAuth.ts` for security best practices
-- [ ] 6.7 Write security-focused tests in `test/security/validation.test.ts`
+- [x] 6.1 Create RLS policy audit script: `scripts/audit-rls-policies.js`
+- [x] 6.2 Review and strengthen input validation in `src/utils/validation.ts`
+- [x] 6.3 Implement XSS protection for user-generated content display
+- [x] 6.4 Add rate limiting awareness to frontend error handling
+- [x] 6.5 Secure error messages to avoid information disclosure
+- [x] 6.6 Audit authentication flow in `useAuth.ts` for security best practices
+- [x] 6.7 Write security-focused tests in `test/security/validation.test.ts`
 
 ## Phase 7: Integration & Verification (Week 4)
 
