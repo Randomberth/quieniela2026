@@ -79,7 +79,10 @@ describe('submitPredictionAction', () => {
   })
 
   it('should check match locking', async () => {
+    const { validatePredictionScores } = await import('@/utils/matchValidation')
     const { isMatchLockedForPrediction } = await import('@/utils/matchValidation')
+    
+    vi.mocked(validatePredictionScores).mockReturnValue({ valid: true })
     vi.mocked(isMatchLockedForPrediction).mockReturnValue(true)
 
     // Mock match fetch
